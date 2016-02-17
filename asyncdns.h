@@ -59,6 +59,9 @@ public:
     ~AsyncDNS();
 
     void sendDNSRequest(QString address);
+
+    QHostAddress getFirstIP(const QString &host);
+    QHostAddress getRandomIP(const QString &host);
     QUdpSocket * getSocket();
 private:
     Buffer         build_request(QString address, ushort qtype, ushort request_id);

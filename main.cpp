@@ -10,6 +10,6 @@ int main(int argc, char *argv[])
     QHostAddress google_dns("8.8.8.8");
     AsyncDNS resolver(google_dns);
 
-    resolver.sendDNSRequest("www.zhihu.com");
+    resolver.sendDNSRequest("www.demohn.com");
     return a.exec();
 }

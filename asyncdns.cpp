@@ -209,6 +209,8 @@ void AsyncDNS::handleReadData()
 {
     Buffer datagram;
     QString host;
+    QList<QHostAddress> host_set;
+
     while(socket->hasPendingDatagrams()){
         datagram.resize(socket->pendingDatagramSize());
 
@@ -229,8 +231,13 @@ void AsyncDNS::handleReadData()
     offset = parse_question(dat, &question);
 
     host   = question.host;
-
     dat += offset;
+
+    //cache
+    if( !cache.contains(host) ){
+        cache.insert(host, host_set);
+    }
+
     //parse RRs
     int an_rr = header.an_count;
     for(int j = 0; j < an_rr ; j++ ){
@@ -238,9 +245,21 @@ void AsyncDNS::handleReadData()
 
         if( rr.type == QTYPE::A && rr.rclass == QCLASS::IN ){
             if(rr.rdlength == 4){ // IPV4 data
-
+                bool lock = false;
                 QHostAddress addr = QHostAddress(parse_ip(rr.rdata));
-                qDebug() << addr;
+
+                if(cache.contains(host)){
+                    for(QHostAddress item : cache[host])
+                    {
+                        if(item == addr){
+                            lock = true;
+                        }
+                    }
+                    if(lock == false)
+                    {
+                        (cache[host]).append(addr);
+                    }
+                }
             }else{
                 qDebug() << "[ERROR] parse RR error!";
                 return ;
@@ -259,5 +278,37 @@ void AsyncDNS::sendDNSRequest(QString address)
 
 void AsyncDNS::onResolve(QString host)
 {
-    qDebug() << host;
+    qDebug() << getFirstIP(host);
+}
+
+QHostAddress AsyncDNS::getFirstIP(const QString &host)
+{
+    //retrieve host address from cache
+    if(cache.contains(host))
+    {
+        if(host.length() > 0){
+            return (cache[host])[0];
+        }else{
+            return QHostAddress("");
+        }
+    }else{
+        return QHostAddress("");
+    }
+}
+
+QHostAddress AsyncDNS::getRandomIP(const QString &host)
+{
+
+    //retrieve host address from cache
+    if(cache.contains(host))
+    {
+        if(host.length() > 0){
+            int total = host.length();
+            return (cache[host])[ qrand() % total ];
+        }else{
+            return QHostAddress("");
+        }
+    }else{
+        return QHostAddress("");
+    }
 }
